@@ -322,7 +322,5 @@ Vary: Access-Control-Request-Headers
 ## 5. Circuit Breaker
 
 ## 6. Gateway / Ingress
-
-
-
+...
 
