@@ -61,10 +61,7 @@ public class Order  {
     
     
     private Integer price;
-
-    /**
-     * pay
-     */
+    
     @PostPersist
     public void onPostPersist(){
 
@@ -76,7 +73,7 @@ public class Order  {
         payCommand.setOrderId(String.valueOf(getId()));
         payCommand.setCustomerId(getCustomerId());
         payCommand.setStatus("주문-결제요청중");
-
+   
         // mappings goes here
         OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
             .pay(getId(), payCommand); 
