@@ -323,4 +323,5 @@ Vary: Access-Control-Request-Headers
 
 ## 6. Gateway / Ingress
 ...
+죄송하지만. 제출시간을 좀더 연장 부탁드립니다. ㅜㅜ.. 금주 일요일까지 해서 나머지 부분도 작성하여 올리겟습니다. 
 
