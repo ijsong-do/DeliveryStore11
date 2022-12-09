@@ -62,6 +62,9 @@ public class Order  {
     
     private Integer price;
 
+    /**
+     * pay
+     */
     @PostPersist
     public void onPostPersist(){
 
@@ -76,7 +79,7 @@ public class Order  {
 
         // mappings goes here
         OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
-            .pay(getId(), payCommand);
+            .pay(getId(), payCommand); 
 
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
