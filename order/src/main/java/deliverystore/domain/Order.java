@@ -69,15 +69,17 @@ public class Order  {
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
         deliverystore.external.PayCommand payCommand = new deliverystore.external.PayCommand();
+        payCommand.setAmount(String.valueOf(getPrice()));
+        payCommand.setOrderId(String.valueOf(getId()));
+        payCommand.setCustomerId(getCustomerId());
+        payCommand.setStatus("주문-결제요청중");
+
         // mappings goes here
         OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
-            .pay(/* get???(), */ payCommand);
-
-
+            .pay(getId(), payCommand);
 
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
-
 
 
         OrderCanceled orderCanceled = new OrderCanceled(this);
