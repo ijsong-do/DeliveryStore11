@@ -850,9 +850,8 @@ Order 클래스의 onPostPersist 메소드 로직에 딜레이를 발생시킨�
 ```
 
 siege명령어로 주문을 요청한다.
-```
-![image](https://user-images.githubusercontent.com/118672378/206871733-7ff41e98-2f41-473b-9143-d2e23055aa1f.png)
-```
+![image](https://user-images.githubusercontent.com/118672378/206871802-742e0d18-3b68-4a2d-a13a-5524283fa8dd.png)
+
 
 ## 6. Gateway / Ingress
 ...
