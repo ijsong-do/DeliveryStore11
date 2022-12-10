@@ -82,16 +82,8 @@ public class Order  {
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
 
-
-        // OrderCanceled orderCanceled = new OrderCanceled(this);
-        // orderCanceled.publishAfterCommit();
-
-        // Get request from FoodCooking
-        //deliverystore.external.FoodCooking foodCooking =
-        //    Application.applicationContext.getBean(deliverystore.external.FoodCookingService.class)
-        //    .getFoodCooking(/** mapping value needed */);
-
     }
+    
     @PreRemove
     public void onPreRemove(){
 

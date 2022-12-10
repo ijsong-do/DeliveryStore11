@@ -645,8 +645,8 @@ Vary: Access-Control-Request-Headers
     }
 }
 ```
-- 주문 1건을 취소하여 Order 서비스와 Payment 서비스를 조회한다.
-  : order 서비스에서는 삭제되었고 Payment서비스에선 주문취소로 조회된다.
+주문 1건을 취소하여 Order 서비스와 Payment 서비스를 조회한다.
+- order 서비스에서는 삭제되었고 Payment서비스에선 주문취소로 조회된다.
 ```
 gitpod /workspace/DeliveryStore11 (main) $ http DELETE "http://localhost:8081/orders/1"
 HTTP/1.1 204 
@@ -745,6 +745,72 @@ Vary: Access-Control-Request-Headers
 ```
 
 ## 4. Request / Response
+OrderPlaced 이벤트가 발생시 pay command 로 원격 호출(Request/Response) 방식으로 구현하였다.
+
+- Order.java 클래스의 onPostPersist 메소드 구현
+```
+ @PostPersist
+    public void onPostPersist(){
+
+        //Following code causes dependency to external APIs
+        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
+
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        payment.setAmount(String.valueOf(getPrice()));
+        payment.setOrderId(String.valueOf(getId()));
+        payment.setCustomerId(getCustomerId());
+        payment.setStatus("주문-결제요청중");
+           
+        // mappings goes here
+        OrderApplication.applicationContext
+        .getBean(deliverystore.external.PaymentService.class)
+        .pay(payment);
+
+        OrderPlaced orderPlaced = new OrderPlaced(this);
+        orderPlaced.publishAfterCommit();
+
+    }
+    
+```
+- Payment.java 클래스의 pay 메소드 구현
+```
+public void pay(PayCommand payCommand){
+
+        Payment payment = new Payment();
+        payment.setOrderId(payCommand.getOrderId());
+        payment.setCustomerId((payCommand.getCustomerId()));
+        payment.setAmount(payCommand.getAmount());
+        setStatus("주문-결재완료");
+
+        repository().save(payment);
+        
+        PaymentApproval paymentApproval = new PaymentApproval(this);        
+        paymentApproval.publishAfterCommit();
+
+    }
+```
+
+- 서비스 테스트 
+```
+Order 서비스에서 주문요청시 Payment 서비스가 비정상이면 주문신청이 되지 않는다.
+gitpod /workspace/DeliveryStore11 (main) $ http POST http://localhost:8081/orders foodId="짬뽕" address="서울 용산구 한남동" customerId="song" qty=1 price="9000"  storeId="1"
+HTTP/1.1 500 
+Connection: close
+Content-Type: application/json
+Date: Sat, 10 Dec 2022 18:04:02 GMT
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "error": "Internal Server Error",
+    "message": "",
+    "path": "/orders",
+    "status": 500,
+    "timestamp": "2022-12-10T18:04:02.800+00:00"
+}
+```
 
 ## 5. Circuit Breaker
 
