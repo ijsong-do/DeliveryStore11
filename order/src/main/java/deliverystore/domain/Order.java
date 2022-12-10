@@ -68,15 +68,16 @@ public class Order  {
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        deliverystore.external.PayCommand payCommand = new deliverystore.external.PayCommand();
-        payCommand.setAmount(String.valueOf(getPrice()));
-        payCommand.setOrderId(String.valueOf(getId()));
-        payCommand.setCustomerId(getCustomerId());
-        payCommand.setStatus("주문-결제요청중");
-   
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        payment.setAmount(String.valueOf(getPrice()));
+        payment.setOrderId(String.valueOf(getId()));
+        payment.setCustomerId(getCustomerId());
+        payment.setStatus("주문-결제요청중");
+           
         // mappings goes here
-        OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
-            .pay(getId(), payCommand);  
+        OrderApplication.applicationContext
+        .getBean(deliverystore.external.PaymentService.class)
+        .pay(payment);
 
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
