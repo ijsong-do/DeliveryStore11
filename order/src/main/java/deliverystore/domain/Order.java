@@ -1,6 +1,7 @@
 package deliverystore.domain;
 
 import deliverystore.domain.OrderPlaced;
+import deliverystore.external.FoodCooking;
 import deliverystore.domain.OrderCanceled;
 import deliverystore.OrderApplication;
 import javax.persistence.*;
@@ -62,6 +63,20 @@ public class Order  {
     
     private Integer price;
     
+    // @PrePersist
+    // public void onPrePersist() {
+    //     // Get request from food       
+    //     FoodCooking foodcooking =         
+    //     OrderApplication.applicationContext.getBean(deliverystore.external.FoodCookingService.class)
+    //     .getFoodCooking(Long.valueOf(getFoodId()));
+           
+    //     if(foodcooking.getStock() < getQty()) throw new RuntimeException("Out of Stock!");
+
+    // }
+
+    /**
+     * 
+     */
     @PostPersist
     public void onPostPersist(){
 
@@ -79,11 +94,17 @@ public class Order  {
         .getBean(deliverystore.external.PaymentService.class)
         .pay(payment);
 
+        //Delay
+        try {
+            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+       
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
-
     }
-    
+
     @PreRemove
     public void onPreRemove(){
 

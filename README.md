@@ -813,6 +813,46 @@ Vary: Access-Control-Request-Headers
 ```
 
 ## 5. Circuit Breaker
+Order 서비스에 서킷 브레이커를 적용하여 구현하였다.
+
+Order 서비스의 application.yaml 파일의 다음 설정을 true 로 하고, 임계치를 610ms로 바꾼다:
+![image](https://user-images.githubusercontent.com/118672378/206870483-871beb9a-76dc-4363-9b04-0f69ab8a8259.png)
+
+Order 클래스의 onPostPersist 메소드 로직에 딜레이를 발생시킨다.
+```
+@PostPersist
+    public void onPostPersist(){
+
+        //Following code causes dependency to external APIs
+        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
+
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        payment.setAmount(String.valueOf(getPrice()));
+        payment.setOrderId(String.valueOf(getId()));
+        payment.setCustomerId(getCustomerId());
+        payment.setStatus("주문-결제요청중");
+           
+        // mappings goes here
+        OrderApplication.applicationContext
+        .getBean(deliverystore.external.PaymentService.class)
+        .pay(payment);
+
+        //Delay
+        try {
+            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+       
+        OrderPlaced orderPlaced = new OrderPlaced(this);
+        orderPlaced.publishAfterCommit();
+    }
+```
+
+siege명령어로 주문을 요청한다.
+```
+![image](https://user-images.githubusercontent.com/118672378/206871733-7ff41e98-2f41-473b-9143-d2e23055aa1f.png)
+```
 
 ## 6. Gateway / Ingress
 ...
