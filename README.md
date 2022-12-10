@@ -316,7 +316,6 @@ Vary: Access-Control-Request-Headers
 ## 2. CQRS
 모델링에 Read Model 추가 (MyPage 녹색스티커)
 Read Model 설계
-![image](https://user-images.githubusercontent.com/118672378/206856726-f8d0b514-9666-47ba-be9a-71286247294a.png)
 ![image](https://user-images.githubusercontent.com/118672378/206856797-76c06985-d732-4dd2-8f94-2ae111ab8e0b.png)
 
 View Model 코드 확인
