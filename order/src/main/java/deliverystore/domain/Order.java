@@ -76,7 +76,7 @@ public class Order  {
    
         // mappings goes here
         OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
-            .pay(getId(), payCommand); 
+            .pay(Long.valueOf(getId()), payCommand); 
 
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
