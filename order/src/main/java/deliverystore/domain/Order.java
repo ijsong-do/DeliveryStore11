@@ -68,7 +68,7 @@ public class Order  {
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+         deliverystore.external.Payment payment = new deliverystore.external.Payment();
         payment.setAmount(String.valueOf(getPrice()));
         payment.setOrderId(String.valueOf(getId()));
         payment.setCustomerId(getCustomerId());
