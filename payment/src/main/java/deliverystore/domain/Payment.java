@@ -53,14 +53,10 @@ public class Payment  {
     @PostPersist
     public void onPostPersist(){
 
-
-        PaymentApproval paymentApproval = new PaymentApproval(this);
+        PaymentApproval paymentApproval = new PaymentApproval(this);        
         paymentApproval.publishAfterCommit();
-
-
-
-        PaymentCanceled paymentCanceled = new PaymentCanceled(this);
-        paymentCanceled.publishAfterCommit();
+       // PaymentCanceled paymentCanceled = new PaymentCanceled(this);
+       // paymentCanceled.publishAfterCommit();
 
     }
 
@@ -72,33 +68,33 @@ public class Payment  {
 
 
     public void pay(PayCommand payCommand){
+
+        Payment payment = new Payment();
+        payment.setOrderId(payCommand.getOrderId());
+        payment.setCustomerId((payCommand.getCustomerId()));
+        payment.setAmount(payCommand.getAmount());
+        setStatus("주문-결재완료");
+
+        repository().save(payment);
+        
+        PaymentApproval paymentApproval = new PaymentApproval(this);        
+        paymentApproval.publishAfterCommit();
+
     }
 
     public static void payCancel(OrderCanceled orderCanceled){
-
-        /** Example 1:  new item 
-        Payment payment = new Payment();
-        repository().save(payment);
-
-        PaymentCanceled paymentCanceled = new PaymentCanceled(payment);
-        paymentCanceled.publishAfterCommit();
-        */
-
-        /** Example 2:  finding and process
         
-        repository().findById(orderCanceled.get???()).ifPresent(payment->{
+        repository().findById(Long.valueOf(orderCanceled.getId())).ifPresent(payment->{
+                        
+            //repository().save(payment);
+            repository().delete(payment);
             
-            payment // do something
-            repository().save(payment);
-
             PaymentCanceled paymentCanceled = new PaymentCanceled(payment);
             paymentCanceled.publishAfterCommit();
 
-         });
-        */
-
-        
+         });      
     }
 
 
 }
+

@@ -68,7 +68,7 @@ public class Order  {
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-         deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
         payment.setAmount(String.valueOf(getPrice()));
         payment.setOrderId(String.valueOf(getId()));
         payment.setCustomerId(getCustomerId());
@@ -83,8 +83,8 @@ public class Order  {
         orderPlaced.publishAfterCommit();
 
 
-        OrderCanceled orderCanceled = new OrderCanceled(this);
-        orderCanceled.publishAfterCommit();
+        // OrderCanceled orderCanceled = new OrderCanceled(this);
+        // orderCanceled.publishAfterCommit();
 
         // Get request from FoodCooking
         //deliverystore.external.FoodCooking foodCooking =
@@ -94,6 +94,18 @@ public class Order  {
     }
     @PreRemove
     public void onPreRemove(){
+
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        payment.setOrderId(String.valueOf(getId()));
+        payment.setStatus("주문취소");
+
+        // mappings goes here
+        OrderApplication.applicationContext
+        .getBean(deliverystore.external.PaymentService.class)
+        .pay(payment);
+
+        OrderCanceled orderCanceled = new OrderCanceled(this);        
+        orderCanceled.publishAfterCommit();
     }
 
     public static OrderRepository repository(){

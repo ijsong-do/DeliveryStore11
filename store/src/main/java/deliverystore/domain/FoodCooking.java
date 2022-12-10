@@ -48,7 +48,7 @@ public class FoodCooking  {
     
     
     
-    private String foodName;
+    private String foodId;
     
     
     
@@ -78,31 +78,42 @@ public class FoodCooking  {
 
 
     public void accept(AcceptCommand acceptCommand){
-        OrderAccepted orderAccepted = new OrderAccepted(this);
-        orderAccepted.publishAfterCommit();
+        if(acceptCommand.getAccept()) {
 
-        OrderRejected orderRejected = new OrderRejected(this);
-        orderRejected.publishAfterCommit();
+            OrderAccepted orderAccepted = new OrderAccepted(this);
+            orderAccepted.publishAfterCommit();
 
+            setStatus("주문-가게접수됨");
+        } else {
+            OrderRejected orderRejected = new OrderRejected(this);
+            orderRejected.publishAfterCommit();
+
+            setStatus("주문-가게거절함");
+        }        
     }
     public void start(){
+        
     }
     public void finish(){
     }
 
     public static void orderInfoCopy(OrderPlaced orderPlaced){
 
-        /** Example 1:  new item 
+        /** Example 1:  new item   */
         FoodCooking foodCooking = new FoodCooking();
-        repository().save(foodCooking);
+        foodCooking.setCustomerId(orderPlaced.getCustomerId());
+        foodCooking.setFoodId(orderPlaced.getFoodId());
+        foodCooking.setOrderId(String.valueOf(orderPlaced.getId()));
+        foodCooking.setStatus("주문-결제요청중");
 
-        */
+        repository().save(foodCooking);
+      
 
         /** Example 2:  finding and process
         
-        repository().findById(orderPlaced.get???()).ifPresent(foodCooking->{
+        repository().findById(orderPlaced.getId()).ifPresent(foodCooking->{
             
-            foodCooking // do something
+            foodCooking. // do something
             repository().save(foodCooking);
 
 
@@ -119,16 +130,14 @@ public class FoodCooking  {
 
         */
 
-        /** Example 2:  finding and process
-        
-        repository().findById(paymentApproval.get???()).ifPresent(foodCooking->{
+        /** Example 2:  finding and process*/        
+        repository().findByOrderId(paymentApproval.getOrderId()).ifPresent(foodCooking->{
             
-            foodCooking // do something
+            foodCooking.setStatus("주문-가게접수"); // do something
             repository().save(foodCooking);
 
-
          });
-        */
+        
 
         
     }

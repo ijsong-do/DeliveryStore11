@@ -44,6 +44,8 @@ public class Delivery  {
     
     private String customerId;
 
+    private String address;
+
     @PostPersist
     public void onPostPersist(){
 
@@ -68,11 +70,20 @@ public class Delivery  {
 
     public static void orderInfoCopy(OrderPlaced orderPlaced){
 
-        /** Example 1:  new item 
+        /** Example 1:  new item */
         Delivery delivery = new Delivery();
-        repository().save(delivery);
+        delivery.setCustomerId(orderPlaced.getAddress());
+        delivery.setOrderId(String.valueOf(orderPlaced.getId()));
+        delivery.setAddress(orderPlaced.getAddress());
+        delivery.setStatus("주문-결제요청중");
 
-        */
+        repository().save(delivery);
+        
+        // FoodCooking foodCooking = new FoodCooking();
+        // foodCooking.setCustomerId(orderPlaced.getCustomerId());
+        // foodCooking.setFoodId(orderPlaced.getFoodId());
+        // foodCooking.setOrderId(String.valueOf(orderPlaced.getId()));
+        // foodCooking.setStatus("미결제");
 
         /** Example 2:  finding and process
         
@@ -95,16 +106,15 @@ public class Delivery  {
 
         */
 
-        /** Example 2:  finding and process
+        /** Example 2:  finding and process*/
         
-        repository().findById(cookFinished.get???()).ifPresent(delivery->{
+        // repository().findByOrderId(cookFinished.getOrderId()).ifPresent(delivery->{
             
-            delivery // do something
-            repository().save(delivery);
+        //     delivery.setStatus(""); // do something
+        //     repository().save(delivery);
 
-
-         });
-        */
+        //  });
+        
 
         
     }

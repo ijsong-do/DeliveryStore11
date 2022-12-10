@@ -477,6 +477,272 @@ Vary: Access-Control-Request-Headers
 }
 ```
 ## 3. Compensation / Correlation
+어떠한 이벤트로 인하여 발생한 변경사항들에 대하여 고객이 원하거나 어떠한 기술적 이유로 인하여 해당 트랜잭션을 취소해야 하는 경우 이를 원복하거나 보상해주는 처리를 Compensation 이라고 한다. 그리고 해당 취소건에 대하여 여러개의 마이크로 서비스 내의 데이터간 상관 관계를 키값으로 연결하여 취소해야 하는데, 이러한 관계값에 대한 처리를 Correlation 이라고 한다.
+
+주문을 1건을 하고 Order 서비스와 Payment 서비스를 조회한다.
+- Order.java 클래스의 메소드 구현 
+```
+@PreRemove
+    public void onPreRemove(){
+
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
+        payment.setOrderId(String.valueOf(getId()));
+        payment.setStatus("주문취소");
+
+        // mappings goes here
+        OrderApplication.applicationContext
+        .getBean(deliverystore.external.PaymentService.class)
+        .pay(payment);
+
+        OrderCanceled orderCanceled = new OrderCanceled(this);        
+        orderCanceled.publishAfterCommit();
+    }
+```
+- Payment.java 클래스의 메소드 구현 
+```
+public static void payCancel(OrderCanceled orderCanceled){
+        
+        repository().findById(Long.valueOf(orderCanceled.getId())).ifPresent(payment->{
+            
+            repository().delete(payment);
+            
+            PaymentCanceled paymentCanceled = new PaymentCanceled(payment);
+            paymentCanceled.publishAfterCommit();
+
+         });      
+    }
+```
+- 실행결과 
+```
+gitpod /workspace/DeliveryStore11 (main) $ http POST http://localhost:8081/orders foodId="짬뽕" address="서울 용산구 한남동" customerId="song" qty=1 price="9000"  storeId="1"
+HTTP/1.1 201 
+Connection: keep-alive
+Content-Type: application/json
+Date: Sat, 10 Dec 2022 17:37:58 GMT
+Keep-Alive: timeout=60
+Location: http://localhost:8081/orders/1
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/1"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/1"
+        }
+    },
+    "address": "서울 용산구 한남동",
+    "customerId": "song",
+    "foodId": "짬뽕",
+    "price": 9000,
+    "qty": 1,
+    "storeId": "1"
+}
+
+
+gitpod /workspace/DeliveryStore11 (main) $ http GET localhost:8081/orders
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 17:38:06 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "orders": [
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/1"
+                    }
+                },
+                "address": "서울 용산구 한남동",
+                "customerId": "song",
+                "foodId": "짬뽕",
+                "price": 9000,
+                "qty": 1,
+                "storeId": "1"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8081/profile/orders"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+
+
+gitpod /workspace/DeliveryStore11 (main) $ http GET localhost:8082/payments
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 17:38:12 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "payments": [
+            {
+                "_links": {
+                    "pay": {
+                        "href": "http://localhost:8082/payments/1/pay"
+                    },
+                    "payment": {
+                        "href": "http://localhost:8082/payments/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/1"
+                    }
+                },
+                "amount": "9000",
+                "customerId": "song",
+                "orderId": "1",
+                "status": "주문-결제요청중"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8082/profile/payments"
+        },
+        "search": {
+            "href": "http://localhost:8082/payments/search"
+        },
+        "self": {
+            "href": "http://localhost:8082/payments"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+```
+- 주문 1건을 취소하여 Order 서비스와 Payment 서비스를 조회한다.
+  : order 서비스에서는 삭제되었고 Payment서비스에선 주문취소로 조회된다.
+```
+gitpod /workspace/DeliveryStore11 (main) $ http DELETE "http://localhost:8081/orders/1"
+HTTP/1.1 204 
+Connection: keep-alive
+Date: Sat, 10 Dec 2022 17:38:18 GMT
+Keep-Alive: timeout=60
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+
+
+gitpod /workspace/DeliveryStore11 (main) $ http GET localhost:8081/orders
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 17:38:23 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "orders": []
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8081/profile/orders"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0
+    }
+}
+
+
+gitpod /workspace/DeliveryStore11 (main) $ http GET localhost:8082/payments
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 17:38:28 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "payments": [
+            {
+                "_links": {
+                    "pay": {
+                        "href": "http://localhost:8082/payments/2/pay"
+                    },
+                    "payment": {
+                        "href": "http://localhost:8082/payments/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/2"
+                    }
+                },
+                "amount": null,
+                "customerId": null,
+                "orderId": "1",
+                "status": "주문취소"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8082/profile/payments"
+        },
+        "search": {
+            "href": "http://localhost:8082/payments/search"
+        },
+        "self": {
+            "href": "http://localhost:8082/payments"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+```
 
 ## 4. Request / Response
 
@@ -484,6 +750,5 @@ Vary: Access-Control-Request-Headers
 
 ## 6. Gateway / Ingress
 ...
-죄송하지만. 제출시간을 좀더 연장 부탁드립니다. ㅜㅜ.. 미숙한 부분이 많아 계속 삽질만 하다 보니 늦어져서요. 
-금주 일요일까지 해서 나머지 부분도 작성하여 올리겟습니다.  
+
 
