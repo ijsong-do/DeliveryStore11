@@ -314,7 +314,169 @@ Vary: Access-Control-Request-Headers
 ```
 
 ## 2. CQRS
+모델링에 Read Model 추가 (MyPage 녹색스티커)
+Read Model 설계
+![image](https://user-images.githubusercontent.com/118672378/206856726-f8d0b514-9666-47ba-be9a-71286247294a.png)
+![image](https://user-images.githubusercontent.com/118672378/206856797-76c06985-d732-4dd2-8f94-2ae111ab8e0b.png)
 
+View Model 코드 확인
+
+- MyPageViewHandler에서 구현체 코드 확인
+```
+@Service
+public class MyPageViewHandler {
+
+    @Autowired
+    private MyPageRepository myPageRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenOrderPlaced_then_CREATE_1 (@Payload OrderPlaced orderPlaced) {
+        try {
+
+            if (!orderPlaced.validate()) return;
+
+            // view 객체 생성
+            MyPage myPage = new MyPage();
+            // view 객체에 이벤트의 Value 를 set 함
+            myPage.setId(orderPlaced.getId());
+            myPage.setStatus("주문됨");            
+            // view 레파지 토리에 save
+            myPageRepository.save(myPage);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+```
+코드 실행하여 확인
+- order 서비스 기동, 주문 
+```
+http POST http://localhost:8081/orders foodId="짜장" address="서울 서초구 신사동" customerId="song" qty=1 price="2500"
+
+http POST http://localhost:8081/orders foodId="짬뽕" address="서울 용산구 한남동" customerId="song" qty=1 price="9000"
+```
+- 주문조회
+```
+gitpod /workspace/DeliveryStore11 (main) $ http :8081/orders
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 13:14:52 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "orders": [
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/2"
+                    }
+                },
+                "address": "서울 서초구 신사동",
+                "customerId": "song",
+                "foodId": "짜장",
+                "price": 2500,
+                "qty": 1,
+                "storeId": null
+            },
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/4"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/4"
+                    }
+                },
+                "address": "서울 용산구 한남동",
+                "customerId": "song",
+                "foodId": "짬뽕",
+                "price": 9000,
+                "qty": 1,
+                "storeId": null
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8081/profile/orders"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 2,
+        "totalPages": 1
+    }
+}
+```
+- customer 서비스 기동 후 확인
+```
+gitpod /workspace/DeliveryStore11 (main) $ http GET http://localhost:8083/myPages
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/hal+json
+Date: Sat, 10 Dec 2022 13:16:25 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+
+{
+    "_embedded": {
+        "myPages": [
+            {
+                "_links": {
+                    "myPage": {
+                        "href": "http://localhost:8083/myPages/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8083/myPages/2"
+                    }
+                },
+                "status": "주문됨"
+            },
+            {
+                "_links": {
+                    "myPage": {
+                        "href": "http://localhost:8083/myPages/4"
+                    },
+                    "self": {
+                        "href": "http://localhost:8083/myPages/4"
+                    }
+                },
+                "status": "주문됨"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8083/profile/myPages"
+        },
+        "self": {
+            "href": "http://localhost:8083/myPages"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 2,
+        "totalPages": 1
+    }
+}
+```
 ## 3. Compensation / Correlation
 
 ## 4. Request / Response
