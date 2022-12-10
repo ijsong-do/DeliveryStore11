@@ -1,7 +1,7 @@
 package deliverystore.domain;
 
-import deliverystore.domain.OrderPlaced;
 import deliverystore.domain.OrderCanceled;
+import deliverystore.domain.OrderPlaced;
 import deliverystore.OrderApplication;
 import javax.persistence.*;
 import java.util.List;
@@ -65,23 +65,23 @@ public class Order  {
     @PostPersist
     public void onPostPersist(){
 
+
+        OrderCanceled orderCanceled = new OrderCanceled(this);
+        orderCanceled.publishAfterCommit();
+
+
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        deliverystore.external.PayCommand payCommand = new deliverystore.external.PayCommand();
+
+        deliverystore.external.Payment payment = new deliverystore.external.Payment();
         // mappings goes here
         OrderApplication.applicationContext.getBean(deliverystore.external.PaymentService.class)
-            .pay(/* get???(), */ payCommand);
-
+            .pay(payment);
 
 
         OrderPlaced orderPlaced = new OrderPlaced(this);
         orderPlaced.publishAfterCommit();
-
-
-
-        OrderCanceled orderCanceled = new OrderCanceled(this);
-        orderCanceled.publishAfterCommit();
 
         // Get request from FoodCooking
         //deliverystore.external.FoodCooking foodCooking =

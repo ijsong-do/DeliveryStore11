@@ -21,23 +21,5 @@ public class PaymentController {
 
 
 
-    @RequestMapping(value = "payments/{id}/pay",
-        method = RequestMethod.PUT,
-        produces = "application/json;charset=UTF-8")
-    public Payment pay(@PathVariable(value = "id") Long id, @RequestBody PayCommand payCommand, HttpServletRequest request, HttpServletResponse response) throws Exception {
-            System.out.println("##### /payment/pay  called #####");
-            Optional<Payment> optionalPayment = paymentRepository.findById(id);
-            
-            optionalPayment.orElseThrow(()-> new Exception("No Entity Found"));
-            Payment payment = optionalPayment.get();
-            payment.pay(payCommand);
-            
-            paymentRepository.save(payment);
-            return payment;
-            
-    }
-    
-
-
 
 }
