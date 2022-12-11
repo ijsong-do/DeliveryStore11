@@ -971,21 +971,8 @@ gitpod /workspace/DeliveryStore11 (main) $
 ```
 
 - 게이트웨이 서비스의 application.yaml의 spring.cloud.gateway.routes설정에 payment 서비스로의 라우팅 추가되어있다.
-```
-spring:
-  profiles: default
-  cloud:
-    gateway:
-      routes:
-        - id: order
-          uri: http://localhost:8081
-          predicates:
-            - Path=/orders/**, /menus/**
-        - id: payment
-          uri: http://localhost:8082
-          predicates:
-            - Path=/payments/**, 
-```
+![image](https://user-images.githubusercontent.com/118672378/206884581-db44a67f-e735-487c-9854-ea815168bed7.png)
+
 - payment 서비스도 게이트웨이를 통하여 되는지 port 변경하여 실행한다.
 ```
 gitpod /workspace/DeliveryStore11 (main) $ http localhost:8088/payments
