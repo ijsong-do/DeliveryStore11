@@ -854,6 +854,206 @@ siege명령어로 주문을 요청한다.
 
 
 ## 6. Gateway / Ingress
-...
+API Gateway를 사용하여 마이크로 서비스들의 엔드포인트 단일화 한다.
+
+- order, payment 서비스를 실행한다. (원격 호출(Request/Response) 방식으로 구현되어 있다)
+```
+cd order
+mvn spring-boot:run
+cd payment
+mvn spring-boot:run
+```
+- gatway 서비스를 실행한다.
+```
+cd gateway
+mvn spring-boot:run
+```
+
+- 기동된 order서비스를 호출하여 주문 1건을 요청한다.
+```
+http POST http://localhost:8081/orders foodId="탕수육" address="서울 서초구 신사동" customerId="song" qty=1 price="10000" storeId="1"
+http localhost:8081/orders
+```
+
+- 게이트웨이를 통하여 같은 url을 port 변경하여 실행한다.
+```
+gitpod /workspace/DeliveryStore11 (main) $ http POST http://localhost:8088/orders foodId="짬뽕" address="서울 용산구 한남동" customerId="song" qty=1 price="9000" storeId="1"
+HTTP/1.1 201 Created
+Content-Type: application/json
+Date: Sun, 11 Dec 2022 03:00:34 GMT
+Location: http://localhost:8081/orders/3
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+transfer-encoding: chunked
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/3"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/3"
+        }
+    },
+    "address": "서울 용산구 한남동",
+    "customerId": "song",
+    "foodId": "짬뽕",
+    "price": 9000,
+    "qty": 1,
+    "storeId": "1"
+}
+gitpod /workspace/DeliveryStore11 (main) $ 
+
+gitpod /workspace/DeliveryStore11 (main) $ http localhost:8088/orders
+HTTP/1.1 200 OK
+Content-Type: application/hal+json
+Date: Sun, 11 Dec 2022 03:01:01 GMT
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+transfer-encoding: chunked
+
+{
+    "_embedded": {
+        "orders": [
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/2"
+                    }
+                },
+                "address": "서울 서초구 신사동",
+                "customerId": "song",
+                "foodId": "탕수육",
+                "price": 10000,
+                "qty": 1,
+                "storeId": "1"
+            },
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/3"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/3"
+                    }
+                },
+                "address": "서울 용산구 한남동",
+                "customerId": "song",
+                "foodId": "짬뽕",
+                "price": 9000,
+                "qty": 1,
+                "storeId": "1"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8081/profile/orders"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 2,
+        "totalPages": 1
+    }
+}
+
+gitpod /workspace/DeliveryStore11 (main) $ 
+```
+
+- 게이트웨이 서비스의 application.yaml의 spring.cloud.gateway.routes설정에 payment 서비스로의 라우팅 추가되어있다.
+```
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: order
+          uri: http://localhost:8081
+          predicates:
+            - Path=/orders/**, /menus/**
+        - id: payment
+          uri: http://localhost:8082
+          predicates:
+            - Path=/payments/**, 
+```
+- payment 서비스도 게이트웨이를 통하여 되는지 port 변경하여 실행한다.
+```
+gitpod /workspace/DeliveryStore11 (main) $ http localhost:8088/payments
+HTTP/1.1 200 OK
+Content-Type: application/hal+json
+Date: Sun, 11 Dec 2022 03:05:52 GMT
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+transfer-encoding: chunked
+
+{
+    "_embedded": {
+        "payments": [
+            {
+                "_links": {
+                    "pay": {
+                        "href": "http://localhost:8082/payments/1/pay"
+                    },
+                    "payment": {
+                        "href": "http://localhost:8082/payments/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/1"
+                    }
+                },
+                "amount": "10000",
+                "customerId": "song",
+                "orderId": "2",
+                "status": "주문-결제요청중"
+            },
+            {
+                "_links": {
+                    "pay": {
+                        "href": "http://localhost:8082/payments/2/pay"
+                    },
+                    "payment": {
+                        "href": "http://localhost:8082/payments/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/2"
+                    }
+                },
+                "amount": "9000",
+                "customerId": "song",
+                "orderId": "3",
+                "status": "주문-결제요청중"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8082/profile/payments"
+        },
+        "search": {
+            "href": "http://localhost:8082/payments/search"
+        },
+        "self": {
+            "href": "http://localhost:8082/payments"
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 2,
+        "totalPages": 1
+    }
+}
+```
 
 
